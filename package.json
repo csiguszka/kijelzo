@@ -1,0 +1,14 @@
+{
+  "name": "esemenytabla",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Helyi tanulóprojekt: eseménytábla naptár-szerkesztővel és mai napi kijelzővel, MongoDB háttérrel.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mongodb": "^6.8.0"
+  }
+}

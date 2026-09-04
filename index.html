@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eseménytábla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep: #12161d;
+    --bg-panel: #1b212b;
+    --bg-panel-raised: #212836;
+    --line: #2b3240;
+    --accent: #c9a227;
+    --accent-bright: #e3bd45;
+    --text-primary: #f4f1e8;
+    --text-secondary: #99a2b2;
+    --text-tertiary: #6b7484;
+    --danger: #c0564c;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-ui: 'Manrope', system-ui, -apple-system, sans-serif;
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{ height: 100%; margin: 0; }
+  body{
+    background: radial-gradient(ellipse at top, #171d27 0%, var(--bg-deep) 60%);
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    overflow: hidden;
+  }
+  button{ font-family: var(--font-ui); }
+  :focus-visible{ outline: 2px solid var(--accent-bright); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation: none !important; transition: none !important; }
+  }
+
+  /* ---------- Kijelző ---------- */
+  #display-screen{
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .display-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 44px 56px 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .logo-slot{
+    width: 100px;
+    height: 100px;
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+    /* Csere: tegyél ide <img> tag-et, vagy állíts be background-image-et. */
+  }
+  .datetime{ text-align: right; }
+  .current-date{
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .current-time{
+    font-family: var(--font-display);
+    font-size: 4.4rem;
+    font-weight: 600;
+    line-height: 1.05;
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .events-main{
+    flex: 1;
+    padding: 12px 56px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .events-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 26px;
+  }
+  .event-card{
+    background: var(--bg-panel);
+    border-left: 5px solid var(--accent);
+    border-radius: 10px;
+    padding: 26px 30px;
+  }
+  .event-time{
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+  }
+  .event-title{
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent-bright);
+    margin-top: 10px;
+  }
+  .event-location{
+    font-size: 1.02rem;
+    color: var(--text-secondary);
+    margin-top: 6px;
+  }
+  .empty-state{
+    margin: auto;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 500;
+  }
+  .pagination-dots{
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding-bottom: 26px;
+  }
+  .dot{
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--line);
+    transition: background .3s ease, transform .3s ease;
+  }
+  .dot.active{ background: var(--accent); transform: scale(1.35); }
+
+  /* ---------- Szerkesztő gomb ---------- */
+  .editor-toggle-btn{
+    position: fixed;
+    right: 30px; bottom: 30px;
+    width: 58px; height: 58px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: #1b1305;
+    font-size: 1.45rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,.4);
+    transition: transform .15s ease, background .15s ease;
+    z-index: 40;
+  }
+  .editor-toggle-btn:hover{ background: var(--accent-bright); transform: translateY(-2px); }
+
+  /* ---------- Szerkesztő overlay ---------- */
+  .editor-overlay{
+    position: fixed; inset: 0;
+    background: rgba(8,10,14,.74);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    z-index: 50;
+  }
+  .editor-overlay[hidden]{ display: none; }
+
+  .editor-panel{
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    width: min(1020px, 100%);
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .editor-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 26px;
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  .editor-header h2{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.4rem;
+    margin: 0;
+  }
+  #editor-close-btn{
+    background: none; border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  #editor-close-btn:hover{ background: var(--bg-panel-raised); color: var(--text-primary); }
+
+  .editor-body{
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    overflow: auto;
+  }
+  @media (max-width: 760px){
+    .editor-body{ grid-template-columns: 1fr; }
+  }
+
+  .calendar-section{
+    padding: 22px 26px;
+    border-right: 1px solid var(--line);
+  }
+  .day-panel{
+    padding: 22px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  .calendar-nav{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .calendar-nav button{
+    background: var(--bg-panel-raised);
+    border: 1px solid var(--line);
+    color: var(--text-primary);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .calendar-nav button:hover{ border-color: var(--accent); }
+  #calendar-month-label{
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+
+  .calendar-weekdays{
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: .76rem;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .calendar-grid{
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-day{
+    position: relative;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: var(--bg-panel-raised);
+    color: var(--text-secondary);
+    font-size: .9rem;
+    cursor: pointer;
+  }
+  .cal-day.outside{ opacity: .35; }
+  .cal-day:hover{ border-color: var(--accent); }
+  .cal-day.today{ color: var(--accent-bright); font-weight: 700; }
+  .cal-day.selected{ background: var(--accent); color: #1b1305; font-weight: 700; }
+  .cal-day .dot-indicator{
+    position: absolute; bottom: 6px;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent-bright);
+  }
+  .cal-day.selected .dot-indicator{ background: #1b1305; }
+
+  #selected-day-label{
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0;
+    text-transform: capitalize;
+  }
+
+  #event-form{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--bg-panel-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .form-row{ display: flex; gap: 12px; }
+  #event-form label{
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: .8rem;
+    color: var(--text-secondary);
+    flex: 1;
+  }
+  #event-form input{
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    color: var(--text-primary);
+    padding: 9px 10px;
+    font-family: var(--font-ui);
+    font-size: .95rem;
+  }
+  #event-form button[type="submit"]{
+    background: var(--accent);
+    border: none;
+    color: #1b1305;
+    font-weight: 700;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 2px;
+  }
+  #event-form button[type="submit"]:hover{ background: var(--accent-bright); }
+
+  .day-events-list{
+    list-style: none;
+    margin: 0; padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+  }
+  .day-event-item{
+    border-left: 4px solid var(--accent);
+    background: var(--bg-panel-raised);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    font-size: .92rem;
+  }
+  .day-event-item .del-btn{
+    background: none; border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .day-event-item .del-btn:hover{ color: var(--danger); }
+  .empty-hint{ color: var(--text-tertiary); font-size: .88rem; }
+
+  @media (max-width: 720px){
+    .display-header{ padding: 26px 24px 12px; }
+    .current-time{ font-size: 2.6rem; }
+    .events-main{ padding: 8px 24px 20px; }
+    .event-time{ font-size: 1.8rem; }
+    .logo-slot{ width: 64px; height: 64px; font-size: .6rem; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ======================= KIJELZŐ ======================= -->
+  <main id="display-screen" aria-label="Mai események kijelzője">
+    <header class="display-header">
+      <div class="logo-slot" id="logo-slot" aria-hidden="true">LOGO</div>
+      <div class="datetime">
+        <div class="current-date" id="current-date"></div>
+        <div class="current-time" id="current-time"></div>
+      </div>
+    </header>
+    <section class="events-main">
+      <div class="events-grid" id="events-grid"></div>
+      <p class="empty-state" id="empty-state" hidden>Nincs több esemény mára.</p>
+    </section>
+    <div class="pagination-dots" id="pagination-dots"></div>
+  </main>
+
+  <!-- Csak fekvő nézetben (szélesség > magasság) jelenik meg -->
+  <button id="editor-toggle-btn" class="editor-toggle-btn" aria-label="Esemény szerkesztő megnyitása" title="Szerkesztő">✎</button>
+
+  <!-- ======================= SZERKESZTŐ ======================= -->
+  <div id="editor-overlay" class="editor-overlay" hidden>
+    <div class="editor-panel" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+      <div class="editor-header">
+        <h2 id="editor-title">Esemény szerkesztő</h2>
+        <button id="editor-close-btn" aria-label="Bezárás" type="button">✕</button>
+      </div>
+      <div class="editor-body">
+        <div class="calendar-section">
+          <div class="calendar-nav">
+            <button type="button" id="prev-month" aria-label="Előző hónap">‹</button>
+            <div id="calendar-month-label"></div>
+            <button type="button" id="next-month" aria-label="Következő hónap">›</button>
+          </div>
+          <div class="calendar-weekdays">
+            <span>H</span><span>K</span><span>Sze</span><span>Cs</span><span>P</span><span>Szo</span><span>V</span>
+          </div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+        </div>
+        <div class="day-panel">
+          <h3 id="selected-day-label"></h3>
+          <form id="event-form">
+            <div class="form-row">
+              <label>Kezdés
+                <input type="time" id="input-start" required>
+              </label>
+              <label>Vég
+                <input type="time" id="input-end" required>
+              </label>
+            </div>
+            <label>Esemény
+              <input type="text" id="input-title" placeholder="pl. Sakk" maxlength="80" required>
+            </label>
+            <label>Helyszín
+              <input type="text" id="input-location" placeholder="pl. Mátyás Király Terem" maxlength="80">
+            </label>
+            <button type="submit">Hozzáadás</button>
+          </form>
+          <ul class="day-events-list" id="day-events-list"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/*
+ * FONTOS MEGJEGYZÉS A MONGODB KAPCSOLATRÓL
+ * -----------------------------------------
+ * A böngésző biztonsági okokból nem tud közvetlenül, nyers TCP-kapcsolaton
+ * keresztül beszélni a MongoDB-vel (nincs ilyen natív JavaScript API).
+ * Ezért ez az oldal egy apró, mellékelt Node.js szerverrel (server.js)
+ * kommunikál sima HTTP kérésekkel (fetch), AZ a szerver pedig a hivatalos
+ * MongoDB Node.js driverrel kapcsolódik a helyi adatbázishoz
+ * (mongodb://localhost:27017 - jelszó és titkosítás NÉLKÜL, mert ez a
+ * projekt kifejezetten lokális, tanulási célú használatra készült).
+ * Lásd server.js és a README.md fájlokat.
+ */
+
+const API_BASE = '/api/events';
+const EVENTS_PER_PAGE = 6;     // hány esemény férjen egy kijelző-oldalra
+const PAGE_SWITCH_MS = 15000;  // lapozás ennyi másodpercenként
+const REFRESH_MS = 30000;      // adatok újralekérése a szerverről ennyi másodpercenként
+
+const state = {
+  events: [],
+  calendarMonth: startOfMonth(new Date()),
+  selectedDate: toISODate(new Date()),
+  displayPage: 0,
+  displayTotalPages: 1,
+};
+
+// ---------- segédfüggvények ----------
+function toISODate(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function currentHHMM(){
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+// ---------- DOM referenciák ----------
+const el = {
+  currentDate: document.getElementById('current-date'),
+  currentTime: document.getElementById('current-time'),
+  eventsGrid: document.getElementById('events-grid'),
+  emptyState: document.getElementById('empty-state'),
+  paginationDots: document.getElementById('pagination-dots'),
+  editorToggleBtn: document.getElementById('editor-toggle-btn'),
+  editorOverlay: document.getElementById('editor-overlay'),
+  editorCloseBtn: document.getElementById('editor-close-btn'),
+  calendarMonthLabel: document.getElementById('calendar-month-label'),
+  calendarGrid: document.getElementById('calendar-grid'),
+  prevMonthBtn: document.getElementById('prev-month'),
+  nextMonthBtn: document.getElementById('next-month'),
+  selectedDayLabel: document.getElementById('selected-day-label'),
+  eventForm: document.getElementById('event-form'),
+  inputStart: document.getElementById('input-start'),
+  inputEnd: document.getElementById('input-end'),
+  inputTitle: document.getElementById('input-title'),
+  inputLocation: document.getElementById('input-location'),
+  dayEventsList: document.getElementById('day-events-list'),
+};
+
+// ---------- kommunikáció a szerverrel / MongoDB-vel ----------
+async function fetchEvents(){
+  try{
+    const res = await fetch(API_BASE);
+    if(!res.ok) throw new Error('Szerverhiba: ' + res.status);
+    state.events = await res.json();
+  }catch(err){
+    console.error('Nem sikerült lekérni az eseményeket (fut a szerver és a MongoDB?):', err);
+  }
+  renderCalendar();
+  renderDayEvents();
+  renderDisplay();
+}
+
+async function createEvent(payload){
+  const res = await fetch(API_BASE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if(!res.ok) throw new Error('Nem sikerült menteni az eseményt.');
+  return res.json();
+}
+
+async function deleteEventOnServer(id){
+  const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+  if(!res.ok) throw new Error('Nem sikerült törölni az eseményt.');
+}
+
+// ---------- óra / dátum fejléc ----------
+function tickClock(){
+  const now = new Date();
+  el.currentDate.textContent = now.toLocaleDateString('hu-HU', {
+    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
+  });
+  el.currentTime.textContent = now.toLocaleTimeString('hu-HU', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  });
+}
+
+// ---------- kijelző: csak a mai, még le nem járt események ----------
+function getTodaysActiveEvents(){
+  const today = toISODate(new Date());
+  const now = currentHHMM();
+  return state.events
+    .filter(e => e.date === today && e.endTime > now)
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+}
+
+function renderDisplay(){
+  const todays = getTodaysActiveEvents();
+  const totalPages = Math.max(1, Math.ceil(todays.length / EVENTS_PER_PAGE));
+  state.displayTotalPages = totalPages;
+  if(state.displayPage >= totalPages) state.displayPage = 0;
+
+  const pageItems = todays.slice(
+    state.displayPage * EVENTS_PER_PAGE,
+    state.displayPage * EVENTS_PER_PAGE + EVENTS_PER_PAGE
+  );
+
+  el.eventsGrid.innerHTML = '';
+  el.eventsGrid.hidden = todays.length === 0;
+  el.emptyState.hidden = todays.length > 0;
+
+  pageItems.forEach(evt => {
+    const card = document.createElement('article');
+    card.className = 'event-card';
+    card.innerHTML = `
+      <div class="event-time">${escapeHtml(evt.startTime)}–${escapeHtml(evt.endTime)}</div>
+      <div class="event-title">${escapeHtml(evt.title)}</div>
+      ${evt.location ? `<div class="event-location">${escapeHtml(evt.location)}</div>` : ''}
+    `;
+    el.eventsGrid.appendChild(card);
+  });
+
+  el.paginationDots.innerHTML = '';
+  if(totalPages > 1){
+    for(let i = 0; i < totalPages; i++){
+      const dot = document.createElement('span');
+      dot.className = 'dot' + (i === state.displayPage ? ' active' : '');
+      el.paginationDots.appendChild(dot);
+    }
+  }
+}
+
+// ---------- naptár (szerkesztő bal oldal) ----------
+function renderCalendar(){
+  const monthDate = state.calendarMonth;
+  el.calendarMonthLabel.textContent = monthDate.toLocaleDateString('hu-HU', {
+    year: 'numeric', month: 'long',
+  });
+
+  const firstOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  const firstWeekday = (firstOfMonth.getDay() + 6) % 7; // hétfő = 0
+  const startDate = new Date(firstOfMonth);
+  startDate.setDate(startDate.getDate() - firstWeekday);
+
+  const todayISO = toISODate(new Date());
+  const countByDate = {};
+  state.events.forEach(e => { countByDate[e.date] = (countByDate[e.date] || 0) + 1; });
+
+  el.calendarGrid.innerHTML = '';
+  for(let i = 0; i < 42; i++){
+    const cellDate = new Date(startDate);
+    cellDate.setDate(startDate.getDate() + i);
+    const iso = toISODate(cellDate);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cal-day';
+    if(cellDate.getMonth() !== monthDate.getMonth()) btn.classList.add('outside');
+    if(iso === todayISO) btn.classList.add('today');
+    if(iso === state.selectedDate) btn.classList.add('selected');
+    btn.innerHTML = `<span>${cellDate.getDate()}</span>`;
+    if(countByDate[iso]){
+      const dotSpan = document.createElement('span');
+      dotSpan.className = 'dot-indicator';
+      btn.appendChild(dotSpan);
+    }
+    btn.addEventListener('click', () => {
+      state.selectedDate = iso;
+      if(cellDate.getMonth() !== monthDate.getMonth()){
+        state.calendarMonth = startOfMonth(cellDate);
+      }
+      renderCalendar();
+      renderDayEvents();
+    });
+    el.calendarGrid.appendChild(btn);
+  }
+}
+
+function renderDayEvents(){
+  const d = new Date(state.selectedDate + 'T00:00:00');
+  el.selectedDayLabel.textContent = d.toLocaleDateString('hu-HU', {
+    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
+  });
+
+  const dayEvents = state.events
+    .filter(e => e.date === state.selectedDate)
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+  el.dayEventsList.innerHTML = '';
+  if(dayEvents.length === 0){
+    const li = document.createElement('li');
+    li.className = 'empty-hint';
+    li.textContent = 'Erre a napra még nincs felvett esemény.';
+    el.dayEventsList.appendChild(li);
+    return;
+  }
+
+  dayEvents.forEach(evt => {
+    const li = document.createElement('li');
+    li.className = 'day-event-item';
+    const info = document.createElement('span');
+    info.innerHTML = `<b>${escapeHtml(evt.startTime)}–${escapeHtml(evt.endTime)}</b> ${escapeHtml(evt.title)}${evt.location ? ' · ' + escapeHtml(evt.location) : ''}`;
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'del-btn';
+    delBtn.title = 'Törlés';
+    delBtn.setAttribute('aria-label', 'Esemény törlése');
+    delBtn.textContent = '🗑';
+    delBtn.addEventListener('click', async () => {
+      try{
+        await deleteEventOnServer(evt._id);
+        state.events = state.events.filter(e => e._id !== evt._id);
+        renderCalendar();
+        renderDayEvents();
+        renderDisplay();
+      }catch(err){
+        alert('Nem sikerült törölni az eseményt. Fut a szerver és a MongoDB?');
+      }
+    });
+    li.appendChild(info);
+    li.appendChild(delBtn);
+    el.dayEventsList.appendChild(li);
+  });
+}
+
+// ---------- szerkesztő gomb: csak fekvő (landscape) nézetben látszik ----------
+function updateToggleVisibility(){
+  const isLandscape = window.innerWidth > window.innerHeight;
+  el.editorToggleBtn.style.display = isLandscape ? 'flex' : 'none';
+}
+
+function openEditor(){
+  el.editorOverlay.hidden = false;
+  renderCalendar();
+  renderDayEvents();
+  el.inputStart.focus();
+}
+function closeEditor(){
+  el.editorOverlay.hidden = true;
+  fetchEvents();
+}
+
+// ---------- eseménykezelők ----------
+el.editorToggleBtn.addEventListener('click', openEditor);
+el.editorCloseBtn.addEventListener('click', closeEditor);
+el.editorOverlay.addEventListener('click', (e) => {
+  if(e.target === el.editorOverlay) closeEditor();
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape' && !el.editorOverlay.hidden) closeEditor();
+});
+
+el.prevMonthBtn.addEventListener('click', () => {
+  state.calendarMonth = new Date(state.calendarMonth.getFullYear(), state.calendarMonth.getMonth() - 1, 1);
+  renderCalendar();
+});
+el.nextMonthBtn.addEventListener('click', () => {
+  state.calendarMonth = new Date(state.calendarMonth.getFullYear(), state.calendarMonth.getMonth() + 1, 1);
+  renderCalendar();
+});
+
+el.eventForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = {
+    date: state.selectedDate,
+    startTime: el.inputStart.value,
+    endTime: el.inputEnd.value,
+    title: el.inputTitle.value.trim(),
+    location: el.inputLocation.value.trim(),
+  };
+  if(!payload.startTime || !payload.endTime || payload.startTime >= payload.endTime){
+    alert('A kezdés időpontjának a vég időpontja előtt kell lennie.');
+    return;
+  }
+  if(!payload.title){
+    alert('Add meg az esemény nevét.');
+    return;
+  }
+  try{
+    const saved = await createEvent(payload);
+    state.events.push(saved);
+    el.eventForm.reset();
+    el.inputTitle.focus();
+    renderCalendar();
+    renderDayEvents();
+    renderDisplay();
+  }catch(err){
+    alert('Nem sikerült menteni az eseményt. Fut a szerver és a MongoDB?');
+  }
+});
+
+window.addEventListener('resize', updateToggleVisibility);
+window.addEventListener('orientationchange', updateToggleVisibility);
+
+// ---------- indítás ----------
+function init(){
+  updateToggleVisibility();
+  tickClock();
+  fetchEvents();
+  setInterval(tickClock, 1000);
+  setInterval(renderDisplay, 1000); // lejárt események folyamatos eltüntetése
+  setInterval(() => {
+    if(state.displayTotalPages > 1){
+      state.displayPage = (state.displayPage + 1) % state.displayTotalPages;
+      renderDisplay();
+    }
+  }, PAGE_SWITCH_MS);
+  setInterval(fetchEvents, REFRESH_MS);
+}
+init();
+</script>
+</body>
+</html>
