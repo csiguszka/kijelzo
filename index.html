@@ -98,7 +98,10 @@
     background: var(--bg-panel);
     border-left: 5px solid var(--accent);
     border-radius: 10px;
-    padding: 26px 30px;
+    padding: 22px 30px;
+    display: flex;
+    align-items: center;
+    gap: 36px;
   }
   .event-time{
     font-family: var(--font-display);
@@ -106,17 +109,24 @@
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .event-title{
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 600;
     color: var(--accent-bright);
-    margin-top: 10px;
+    margin: 0;
+    line-height: 1.1;
   }
   .event-location{
-    font-size: 1.02rem;
-    color: var(--text-secondary);
-    margin-top: 6px;
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.1;
   }
   .empty-state{
     margin: auto;
@@ -368,7 +378,10 @@
     .display-header{ padding: 26px 24px 12px; }
     .current-time{ font-size: 2.6rem; }
     .events-main{ padding: 8px 24px 20px; }
-    .event-time{ font-size: 1.8rem; }
+    .event-card{ gap: 16px; padding: 18px 20px; }
+    .event-time,
+    .event-title,
+    .event-location{ font-size: 1.8rem; }
     .logo-slot{ width: 64px; height: 64px; font-size: .6rem; }
   }
 </style>
@@ -542,7 +555,7 @@ function tickClock(){
     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
   });
   el.currentTime.textContent = now.toLocaleTimeString('hu-HU', {
-    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    hour: '2-digit', minute: '2-digit', hour12: false,
   });
 }
 
