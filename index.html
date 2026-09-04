@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg-deep: #12161d;
+    --bg-deep: #24334a;
     --bg-panel: #1b212b;
     --bg-panel-raised: #212836;
     --line: #2b3240;
@@ -26,7 +26,7 @@
   *{ box-sizing: border-box; }
   html, body{ height: 100%; margin: 0; }
   body{
-    background: radial-gradient(ellipse at top, #171d27 0%, var(--bg-deep) 60%);
+    background: var(--bg-deep);
     color: var(--text-primary);
     font-family: var(--font-ui);
     overflow: hidden;
@@ -47,7 +47,7 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 44px 56px 20px;
+    padding: 20px 30px 20px;
     flex-wrap: wrap;
     gap: 16px;
   }
@@ -378,7 +378,7 @@
   <!-- ======================= KIJELZŐ ======================= -->
   <main id="display-screen" aria-label="Mai események kijelzője">
     <header class="display-header">
-      <div class="logo-slot" id="logo-slot" aria-hidden="true">LOGO</div>
+      <img src="https://www.ojim.fr/wp-content/uploads/2024/11/mcc-budapest.jpg" alt="logo" class="logo-slot" style=" width: 350px; height: 100px; object-fit: cover; border-radius: 12px; border: none;">
       <div class="datetime">
         <div class="current-date" id="current-date"></div>
         <div class="current-time" id="current-time"></div>
